@@ -1,0 +1,98 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# Generate 300 days of stock prices
+# -----------------------------
+
+np.random.seed(42)
+
+days = 300
+initial_price = 500
+
+daily_returns = np.random.normal(0.001, 0.018, days)
+
+prices = [initial_price]
+
+for r in daily_returns:
+    next_price = prices[-1] * (1 + r)
+    prices.append(next_price)
+
+# Create DataFrame
+df = pd.DataFrame({
+    "Price": prices
+})
+
+# -----------------------------
+# Part (a): Create Features
+# -----------------------------
+
+# 1-Day Return
+df["Return_1d"] = df["Price"].pct_change()
+
+# 5-Day Moving Average
+df["SMA_5"] = df["Price"].rolling(5).mean()
+
+# 20-Day Moving Average
+df["SMA_20"] = df["Price"].rolling(20).mean()
+
+# 10-Day Rolling Volatility
+df["Volatility_10"] = df["Return_1d"].rolling(10).std()
+
+# 5-Day Momentum
+df["Momentum_5"] = df["Price"] - df["Price"].shift(5)
+
+# -----------------------------
+# Part (b): Create Target Variable
+# -----------------------------
+
+# Tomorrow's return
+df["Tomorrow_Return"] = df["Return_1d"].shift(-1)
+
+# Target
+df["Target"] = np.where(df["Tomorrow_Return"] > 0, 1, 0)
+
+# Remove missing values
+df = df.dropna().reset_index(drop=True)
+
+print(df.head())
+
+# -----------------------------
+# Class Balance
+# -----------------------------
+
+print("\nClass Distribution")
+print(df["Target"].value_counts())
+
+# Plot Class Distribution
+df["Target"].value_counts().plot(
+    kind="bar",
+    title="Class Balance"
+)
+
+plt.xlabel("Class")
+plt.ylabel("Count")
+plt.show()
+
+# -----------------------------
+# Part (c): Manual Min-Max Scaling
+# -----------------------------
+
+features = ["Return_1d",
+            "SMA_5",
+            "SMA_20",
+            "Volatility_10",
+            "Momentum_5"]
+
+scaled_df = df.copy()
+
+for col in features:
+
+    minimum = df[col].min()
+    maximum = df[col].max()
+
+    scaled_df[col] = (df[col] - minimum) / (maximum - minimum)
+
+print("\nScaled Features")
+print(scaled_df[features].head())
