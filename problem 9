@@ -1,0 +1,47 @@
+import numpy as np
+import pandas as pd
+
+# Values of K to test
+k_values = [3, 7, 11]
+
+# Number of folds
+num_folds = 5
+
+# Split data into 5 parts
+X_folds = np.array_split(X, num_folds)
+y_folds = np.array_split(y, num_folds)
+
+results = []
+
+for k in k_values:
+
+    fold_accuracy = []
+
+    for i in range(num_folds):
+
+        # Test Fold
+        X_test = X_folds[i]
+        y_test = y_folds[i]
+
+        # Training Data
+        X_train = np.concatenate([X_folds[j] for j in range(num_folds) if j != i])
+        y_train = np.concatenate([y_folds[j] for j in range(num_folds) if j != i])
+
+        # Prediction
+        prediction = knn_predict(X_train, y_train, X_test, k)
+
+        # Accuracy
+        acc = accuracy(y_test, prediction)
+
+        fold_accuracy.append(acc)
+
+    mean_accuracy = np.mean(fold_accuracy)
+    std_accuracy = np.std(fold_accuracy)
+
+    results.append([k, mean_accuracy, std_accuracy])
+
+# Display Result
+cv_result = pd.DataFrame(results,
+                         columns=["K", "Mean Accuracy", "Std Accuracy"])
+
+print(cv_result)
