@@ -1,1 +1,86 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
+# Make the results reproducible
+np.random.seed(42)
+
+# Number of trading days
+days = 50
+
+# Initial portfolio value
+initial_value = 1000000
+
+# Generate daily returns
+mean_return = 0.001
+std_dev = 0.015
+
+returns = np.random.normal(mean_return, std_dev, days)
+
+# Create portfolio value series
+portfolio_value = [initial_value]
+
+for r in returns:
+    next_value = portfolio_value[-1] * (1 + r)
+    portfolio_value.append(next_value)
+
+portfolio_value = np.array(portfolio_value)
+
+# -----------------------------
+# Part (a): Historical VaR
+# -----------------------------
+
+var_95 = -np.percentile(returns, 5)
+var_99 = -np.percentile(returns, 1)
+
+print("Historical VaR")
+print(f"95% VaR : {var_95:.4f}")
+print(f"99% VaR : {var_99:.4f}")
+
+print("\nInterpretation:")
+print(f"95% VaR means the portfolio is not expected to lose more than {var_95*100:.2f}% on 95% of trading days.")
+print(f"99% VaR means the portfolio is not expected to lose more than {var_99*100:.2f}% on 99% of trading days.")
+
+# -----------------------------
+# Part (b): CVaR
+# -----------------------------
+
+loss_95 = returns[returns <= np.percentile(returns, 5)]
+loss_99 = returns[returns <= np.percentile(returns, 1)]
+
+cvar_95 = -loss_95.mean()
+cvar_99 = -loss_99.mean()
+
+print("\nConditional VaR")
+print(f"95% CVaR : {cvar_95:.4f}")
+print(f"99% CVaR : {cvar_99:.4f}")
+
+print("\nWhy CVaR is better?")
+print("CVaR measures the average loss beyond the VaR threshold.")
+print("It captures extreme losses, while VaR only gives the cutoff value.")
+
+# -----------------------------
+# Part (c): Maximum Drawdown
+# -----------------------------
+
+running_peak = np.maximum.accumulate(portfolio_value)
+
+drawdown = (running_peak - portfolio_value) / running_peak
+
+max_drawdown = drawdown.max()
+
+print("\nMaximum Drawdown :", round(max_drawdown, 4))
+
+# Plot Drawdown Curve
+plt.figure(figsize=(10,5))
+plt.plot(drawdown, label="Drawdown")
+plt.fill_between(range(len(drawdown)),
+                 drawdown,
+                 alpha=0.3)
+
+plt.title("Portfolio Drawdown")
+plt.xlabel("Trading Days")
+plt.ylabel("Drawdown")
+plt.legend()
+plt.grid(True)
+plt.show()
