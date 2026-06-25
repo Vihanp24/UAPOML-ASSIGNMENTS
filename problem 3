@@ -1,0 +1,65 @@
+import numpy as np
+import pandas as pd
+
+# To get the same random values every time
+np.random.seed(42)
+
+# Generate 252 days of synthetic portfolio returns
+days = 252
+mean_return = 0.001
+std_dev = 0.015
+
+returns = np.random.normal(mean_return, std_dev, days)
+
+# Risk-free rate
+annual_rf = 0.06
+daily_rf = annual_rf / 252
+
+# ---------------------------------------
+# Part (a): Sharpe Ratio
+# ---------------------------------------
+
+# Average daily return
+avg_daily_return = np.mean(returns)
+
+# Annualised return
+annual_return = avg_daily_return * 252
+
+# Annualised volatility
+annual_volatility = np.std(returns) * np.sqrt(252)
+
+# Sharpe Ratio
+sharpe_ratio = (annual_return - annual_rf) / annual_volatility
+
+print("Annual Return :", round(annual_return, 4))
+print("Annual Volatility :", round(annual_volatility, 4))
+print("Sharpe Ratio :", round(sharpe_ratio, 4))
+
+
+# ---------------------------------------
+# Part (b): Sortino Ratio
+# ---------------------------------------
+
+# Select only negative returns
+negative_returns = returns[returns < daily_rf]
+
+# Downside deviation
+downside_deviation = np.std(negative_returns) * np.sqrt(252)
+
+# Sortino Ratio
+sortino_ratio = (annual_return - annual_rf) / downside_deviation
+
+print("\nSortino Ratio :", round(sortino_ratio, 4))
+
+
+# ---------------------------------------
+# Part (c): Comparison Table
+# ---------------------------------------
+
+comparison = pd.DataFrame({
+    "Metric": ["Sharpe Ratio", "Sortino Ratio"],
+    "Value": [sharpe_ratio, sortino_ratio]
+})
+
+print("\nComparison Table")
+print(comparison)
