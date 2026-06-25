@@ -1,0 +1,51 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# Prepare Features and Target
+# -----------------------------
+
+features = ["Return_1d", "SMA_5", "SMA_20",
+            "Volatility_10", "Momentum_5"]
+
+X = scaled_df[features].values
+
+# Continuous target (Tomorrow's Return)
+y = scaled_df["Tomorrow_Return"].values
+
+# -----------------------------
+# Train-Test Split
+# -----------------------------
+
+split = int(0.8 * len(X))
+
+X_train = X[:split]
+X_test = X[split:]
+
+y_train = y[:split]
+y_test = y[split:]
+
+# -----------------------------
+# Add Bias Column
+# -----------------------------
+
+ones_train = np.ones((X_train.shape[0], 1))
+ones_test = np.ones((X_test.shape[0], 1))
+
+X_train = np.hstack((ones_train, X_train))
+X_test = np.hstack((ones_test, X_test))
+
+# -----------------------------
+# Normal Equation
+# β = (XᵀX)^(-1) Xᵀy
+# -----------------------------
+
+beta = np.linalg.inv(X_train.T @ X_train) @ X_train.T @ y_train
+
+print("Learned Coefficients\n")
+
+feature_names = ["Bias"] + features
+
+for i in range(len(beta)):
+    print(feature_names[i], ":", round(beta[i],6))
