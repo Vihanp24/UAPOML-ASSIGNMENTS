@@ -1,0 +1,113 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Generate stock prices using random walk
+np.random.seed(42)
+
+days = 200
+initial_price = 1000
+
+daily_returns = np.random.normal(0.001, 0.018, days)
+
+prices = [initial_price]
+
+for r in daily_returns:
+    next_price = prices[-1] * (1 + r)
+    prices.append(next_price)
+
+# Create DataFrame
+df = pd.DataFrame({
+    "Price": prices
+})
+
+# -----------------------------------
+# Calculate Moving Averages
+# -----------------------------------
+
+df["SMA10"] = df["Price"].rolling(window=10).mean()
+df["SMA30"] = df["Price"].rolling(window=30).mean()
+
+# -----------------------------------
+# Generate Buy/Sell Signals
+# -----------------------------------
+
+df["Signal"] = 0
+
+# Buy when SMA10 > SMA30
+df.loc[df["SMA10"] > df["SMA30"], "Signal"] = 1
+
+# Sell when SMA10 < SMA30
+df.loc[df["SMA10"] < df["SMA30"], "Signal"] = -1
+
+# Detect crossover points
+df["Trade"] = df["Signal"].diff()
+
+# -----------------------------------
+# Strategy Returns
+# -----------------------------------
+
+df["Daily Return"] = df["Price"].pct_change()
+
+# Shift signal to avoid look-ahead bias
+df["Strategy Return"] = df["Signal"].shift(1) * df["Daily Return"]
+
+# -----------------------------------
+# Cumulative Returns
+# -----------------------------------
+
+initial_capital = 100000
+
+df["Buy Hold"] = initial_capital * (1 + df["Daily Return"]).cumprod()
+
+df["Strategy"] = initial_capital * (1 + df["Strategy Return"].fillna(0)).cumprod()
+
+# -----------------------------------
+# Plot Comparison
+# -----------------------------------
+
+plt.figure(figsize=(10,5))
+
+plt.plot(df["Buy Hold"], label="Buy and Hold")
+plt.plot(df["Strategy"], label="SMA Strategy")
+
+plt.title("Strategy vs Buy and Hold")
+plt.xlabel("Days")
+plt.ylabel("Portfolio Value (₹)")
+plt.grid(True)
+plt.legend()
+
+plt.show()
+
+# -----------------------------------
+# Win Rate
+# -----------------------------------
+
+trade_returns = df.loc[df["Trade"] != 0, "Strategy Return"]
+
+winning_trades = trade_returns[trade_returns > 0]
+
+losing_trades = trade_returns[trade_returns < 0]
+
+if len(trade_returns) > 0:
+    win_rate = len(winning_trades) / len(trade_returns)
+else:
+    win_rate = 0
+
+# -----------------------------------
+# Profit Factor
+# -----------------------------------
+
+total_profit = winning_trades.sum()
+
+total_loss = abs(losing_trades.sum())
+
+if total_loss != 0:
+    profit_factor = total_profit / total_loss
+else:
+    profit_factor = np.inf
+
+print("Total Trades :", len(trade_returns))
+print("Winning Trades :", len(winning_trades))
+print("Win Rate :", round(win_rate, 2))
+print("Profit Factor :", round(profit_factor, 2))
