@@ -1,0 +1,136 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# -------------------------------
+# Prepare Features and Target
+# -------------------------------
+
+features = ["Return_1d", "SMA_5", "SMA_20",
+            "Volatility_10", "Momentum_5"]
+
+X = scaled_df[features].values
+y = scaled_df["Target"].values
+
+# -------------------------------
+# Train-Test Split (80:20)
+# -------------------------------
+
+split = int(0.8 * len(X))
+
+X_train = X[:split]
+X_test = X[split:]
+
+y_train = y[:split]
+y_test = y[split:]
+
+
+# -------------------------------
+# Euclidean Distance Function
+# -------------------------------
+
+def euclidean_distance(point1, point2):
+
+    distance = np.sqrt(np.sum((point1 - point2) ** 2))
+
+    return distance
+
+
+# -------------------------------
+# KNN Prediction Function
+# -------------------------------
+
+def knn_predict(X_train, y_train, X_test, k):
+
+    predictions = []
+
+    # Check every test sample
+    for test_point in X_test:
+
+        distances = []
+
+        # Calculate distance from all training samples
+        for train_point in X_train:
+
+            d = euclidean_distance(test_point, train_point)
+
+            distances.append(d)
+
+        distances = np.array(distances)
+
+        # Indices of nearest neighbours
+        nearest = np.argsort(distances)[:k]
+
+        neighbour_labels = y_train[nearest]
+
+        # Majority Voting
+        if np.sum(neighbour_labels) >= k / 2:
+            predictions.append(1)
+        else:
+            predictions.append(0)
+
+    return np.array(predictions)
+
+
+# -------------------------------
+# Accuracy Function
+# -------------------------------
+
+def accuracy(actual, predicted):
+
+    correct = np.sum(actual == predicted)
+
+    return correct / len(actual)
+
+
+# -------------------------------
+# Test Different Values of K
+# -------------------------------
+
+k_values = [3, 5, 7, 11, 15]
+
+accuracy_list = []
+
+for k in k_values:
+
+    prediction = knn_predict(X_train, y_train, X_test, k)
+
+    acc = accuracy(y_test, prediction)
+
+    accuracy_list.append(acc)
+
+    print("K =", k, " Accuracy =", round(acc, 4))
+
+
+# -------------------------------
+# Plot Accuracy
+# -------------------------------
+
+plt.figure(figsize=(8,5))
+
+plt.plot(k_values,
+         accuracy_list,
+         marker='o')
+
+plt.xlabel("Value of K")
+plt.ylabel("Accuracy")
+plt.title("Accuracy vs K")
+plt.grid(True)
+
+plt.show()
+
+
+# -------------------------------
+# Best K
+# -------------------------------
+
+best_index = np.argmax(accuracy_list)
+
+best_k = k_values[best_index]
+
+print("\nBest K =", best_k)
+
+best_prediction = knn_predict(X_train,
+                              y_train,
+                              X_test,
+                              best_k)
